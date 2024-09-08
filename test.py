@@ -17,6 +17,7 @@ def main():
     screen.text("Item q 8",2)
     screen.text("Item q 9",3)
     screen.text("Item q 10",4)
+    screen.markers(0,2,True,True)
 
     """
     bar = Rectangle(Point(40, 230), Point(65, 230 - height))

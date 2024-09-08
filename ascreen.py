@@ -130,7 +130,7 @@ class AScreen:
                 width = self.width
             else:
                 width = self.height
-            x1 += width - self.marker_width
+            x1 += width - self.marker_width +1
             x2 += width - self.marker_width
         return x1, y1, x2, y2
 

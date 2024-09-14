@@ -24,6 +24,12 @@ class AScreen:
         self.width = width
         self.height = height
         self.orientation = orientation
+        if orientation==0 or orientation ==2:
+            self.actual_width=width
+            self.actual_height=height
+        else:
+            self.actual_width=height
+            self.actual_height=width
         self.font_height = font_height
         self.padding = padding
         self.gap = gap
@@ -37,10 +43,7 @@ class AScreen:
         """
         calculates the number of awailable menu rows
         """
-        if self.orientation == 0 or self.orientation == 2:  ## actual rotation
-            y = self.height
-        else:
-            y = self.width
+        y=self.actual_height
         # first we remove two markers at the top and buttom
         y -= 2 * (self.marker_width + 2 * self.gap)
         total_nr_of_rows = y // self.row_height
@@ -79,11 +82,7 @@ class AScreen:
                 - self.gap
             )
             y2 = y1 - self.row_height + self.gap
-        if self.orientation == 0 or self.orientation == 2:  ## actual rotation
-            width = self.width
-        else:
-            width = self.height
-        return self.frame_x_offset, y1, width, y2
+        return self.frame_x_offset, y1, self.actual_width, y2
 
     def marker_area(self, right_side: bool):
         x1 = 0
@@ -98,12 +97,8 @@ class AScreen:
         x2 = self.gap + self.marker_width
         y2 = 0
         if right_side:
-            if self.orientation == 0 or self.orientation == 2:  ## actual rotation
-                width = self.width
-            else:
-                width = self.height
-            x1 += width - self.marker_width - self.gap
-            x2 += width - self.marker_width - self.gap
+            x1 += self.actual_width - self.marker_width - self.gap
+            x2 += self.actual_width - self.marker_width - self.gap
         return x1, y1, x2, y2
 
     def marker_coords(self, right_side: bool, row: int):
@@ -126,12 +121,8 @@ class AScreen:
             )
             y2 = y1 - self.row_height + self.gap
         if right_side:
-            if self.orientation == 0 or self.orientation == 2:  ## actual rotation
-                width = self.width
-            else:
-                width = self.height
-            x1 += width - self.marker_width +1
-            x2 += width - self.marker_width
+            x1 += self.actual_width - self.marker_width +1
+            x2 += self.actual_width - self.marker_width
         return x1, y1, x2, y2
 
     def marker_up_down_coords(self, down: bool):
@@ -139,10 +130,7 @@ class AScreen:
         calculates the marker coordinates for the up or down marker
         """
         x1 = self.marker_width + self.gap + 1
-        if self.orientation == 0 or self.orientation == 2:  ## actual rotation
-            x2 = self.width
-        else:
-            x2 = self.height
+        x2 = self.actual_width
         x2 -= self.marker_width - self.gap +2
         y1 = (
             # 2 * self.padding

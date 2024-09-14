@@ -790,6 +790,9 @@ class Text(GraphicsObject):
     def setTextColor(self, color):
         self.setFill(color)
 
+    def setOrientation(self, orientation):
+        self._reconfig("anchor", orientation)
+
 
 class Entry(GraphicsObject):
 

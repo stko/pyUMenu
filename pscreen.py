@@ -18,6 +18,7 @@ class Screen(AScreen):
     TITLE_COLOR="white"
     TEXT_BG="chartreuse2"
     TEXT_COLOR="black"
+    VALUE_COLOR="blue"
     FONT_NAME="arial"
     FONT_SIZE=16
     FONT_WEIGHT="normal"
@@ -42,7 +43,7 @@ class Screen(AScreen):
         super().__init__(width, height, self.font_height, padding, gap, marker_width, orientation)
 
 
-    def text(self, title:str, row:int, style:str="arial",percent:int=0):
+    def text(self, row:int, title:str, value:str, style:str="arial",percent:int=0):
         if row>self.nr_of_rows():
             return
         x1,y1,x2,y2=self.frame_coords(row)
@@ -54,15 +55,24 @@ class Screen(AScreen):
         bar.setWidth(0)
         bar.draw(self.win)
         x,y=self.text_start(row)
-        text=gr.Text(gr.Point(x, y- self.descent), title)
-        if row==0:
-            text.setFill(self.TITLE_COLOR)
-        else:
-            text.setFill(self.TEXT_COLOR)
-        text.setFace(self.FONT_NAME)
-        text.setSize(self.FONT_SIZE)
-        text.setStyle(self.FONT_WEIGHT)
-        text.draw(self.win)
+        output=[title, value] # beeing lazy and write the whole textformating just once...
+        for i in range(2):
+            content=output[i]
+            if i==0:
+                text=gr.Text(gr.Point(x, y- self.descent), content)
+                color=self.TEXT_COLOR
+            else:
+                text=gr.Text(gr.Point(self.actual_width -self.marker_width -self.gap -self.padding, y- self.descent), content)
+                text.setOrientation("se")
+                color=self.VALUE_COLOR
+            if row==0:
+                text.setFill(self.TITLE_COLOR)
+            else:
+                text.setFill(color)
+            text.setFace(self.FONT_NAME)
+            text.setSize(self.FONT_SIZE)
+            text.setStyle(self.FONT_WEIGHT)
+            text.draw(self.win)
 
     def markers(self, back: int, select: int, up: bool, down: bool):
         """

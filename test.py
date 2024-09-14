@@ -6,12 +6,12 @@ def main():
 
     # Create a graphics window with labels on left edge
     screen = Screen(" pyUIMenu Test ", 320, 240,padding=10, gap=1,marker_width=10)
-    screen.text("Simulation",0)
-    screen.text("Temperatur",1)
-    screen.text("Pressure",2)
-    screen.text("Torque",3)
-    screen.text("Level",4)
-    screen.text("Speed",5)
+    screen.text(0, "Simulation","")
+    screen.text(1, "Temperatur","27°")
+    screen.text(2, "Pressure","3.4 bar")
+    screen.text(3, "Torque","34 Nm")
+    screen.text(4, "Level","12")
+    screen.text(5, "Speed","17 km/h")
     screen.markers(0,2,True,True)
 
     """

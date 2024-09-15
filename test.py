@@ -5,17 +5,44 @@ from pyuimenu import UIMenu, Menu, Item
 
 from time import sleep
 
-def tick(): # little sleepy routine
-    sleep(0.5)
+# If Windows getch() available, use that.  If not, use a
+# Unix version.
+try:
+    import msvcrt
+    getch = msvcrt.getch
+except:
+    import sys, tty, termios
+    def _unix_getch():
+        """Get a single character from stdin, Unix version"""
 
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())          # Raw read
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+    getch = _unix_getch
+
+uimenu=UIMenu()
+
+def submenu(row):
+    menu=Menu()
+    menu.add_item(Item("submenu",""))
+    menu.add_item(Item("subitem","1"))
+    menu.add_item(Item("another","2"))
+    uimenu.add(menu)
 
 def main():
 
-    uimenu=UIMenu()
+
     menu=Menu()
     menu.add_item(Item("Simulation",""))
     menu.add_item(Item("Temperatur","27°"))
     menu.add_item(Item("Pressure","3.4 bar"))
+    menu.add_item(Item("Submenu","-",callback=submenu))
     menu.add_item(Item("Torque","34 Nm"))
     menu.add_item(Item("Level","12"))
     menu.add_item(Item("Speed","17 km/h"))
@@ -23,51 +50,23 @@ def main():
     menu.add_item(Item("Brightness","70%"))
     menu.add_item(Item("Volume","half"))
     uimenu.add(menu)
-    uimenu._show()
-    for i in range(8):
-        uimenu.move_cursor(1)
-
-    for i in range(8):
-        uimenu.move_cursor(-1)
-
-    for i in range(8):
-        uimenu.move_cursor(2)
-
-    for i in range(8):
-        uimenu.move_cursor(-3)
-
-
-
-    """
-    # Create a graphics window with labels on left edge
-    screen = Screen(" pyUIMenu Test ", 320, 240,padding=10, gap=1,marker_width=10)
-    screen.text(0, "Simulation","")
-    screen.text(1, "Temperatur","27°")
-    screen.text(2, "Pressure","3.4 bar")
-    screen.text(3, "Torque","34 Nm")
-    screen.text(4, "Level","12")
-    screen.text(5, "Speed","17 km/h")
-    screen.markers(0,2,True,True)
-    """
-    """
-    bar = Rectangle(Point(40, 230), Point(65, 230 - height))
-    bar.setFill("green")
-    bar.setWidth(2)
-    bar.draw(win)
-    # Draw bars for successive years
-    for year in range(1, 11):
-        # calculate value for the next year
-        principal = principal * (1 + apr)
-        # draw bar for this value
-        xll = year * 25 + 40
-        height = principal * 0.02
-        bar = Rectangle(Point(xll, 230), Point(xll + 25, 230 - height))
-        bar.setFill("green")
-        bar.setWidth(2)
-        bar.draw(win)
-    """
-    input("Press <Enter> to quit ")
-    screen.close()
+    c="a"
+    esc_sequence=""
+    while c != "q":
+        c=getch()
+        #print(hex(ord(c)))
+        esc_sequence+=c
+        if len(esc_sequence)>3:
+            esc_sequence=esc_sequence[1:4]
+        if esc_sequence=="\x1b[D": # back
+            uimenu.back()
+        if esc_sequence=="\x1b[C": # select
+            uimenu.select()
+        if esc_sequence=="\x1b[A": # up
+            uimenu.move_cursor(-1)
+        if esc_sequence=="\x1b[B": # down
+            uimenu.move_cursor(1)
+    uimenu.screen.close()
 
 
 main()

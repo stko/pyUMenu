@@ -45,6 +45,9 @@ class Menu:
         self.top = True
         self.screen = None
         self.rows = []
+        self.top_row = 1
+        self.cursor_row = 1
+
 
     def add_item(self, item: Item) -> int:
         """
@@ -79,8 +82,6 @@ class UIMenu:
         )
         self.menus = []
         self.menu = None
-        self.top_row = 1  # 0 is always the title
-        self.cursor_row = 0
         self.slider_active = False
 
     def authenticate(self, title, abort_text, qrcode, wait_for_authorisation) -> bool:
@@ -98,10 +99,8 @@ class UIMenu:
         menu.top = len(self.menus) == 0
         self.menus.append(menu)
         self.menu = menu
+        self._show()
 
-        # item 0 of the menu is always the header, so the real menu part starts at index 1
-        self.top_row = 1
-        self.cursor_row = 1
 
     def _show(self):
         total_rows = self.menu.nr_of_items()
@@ -109,35 +108,36 @@ class UIMenu:
             if screen_row == 0:
                 self.menu.print(self.screen, screen_row, 0)
                 continue
-            if self.top_row + screen_row - 1 > total_rows:
+            if self.menu.top_row + screen_row - 1 > total_rows:
                 self.screen.text(screen_row, "", "")
                 continue
-            self.menu.print(self.screen, screen_row, self.top_row + screen_row - 1)
+            self.menu.print(self.screen, screen_row, self.menu.top_row + screen_row - 1)
         self._set_markers()
 
     def _set_markers(self):
         total_rows = self.menu.nr_of_items()
         actual_item = self._get_actual_item()
         actual_screen_row = (
-            self.cursor_row - self.top_row + 1
+            self.menu.cursor_row - self.menu.top_row + 1
         )  # in which screen row we are?
-        if self.slider_active:
+        if actual_item.slider:
             back_marker = actual_screen_row
         else:
             back_marker = 0
-        top_marker_visible = self.top_row > 1
-        bottom_marker_visible = self.top_row + self.screen.nr_of_rows < total_rows
+        top_marker_visible = self.menu.top_row > 1
+        is_selectable=actual_item.callback != None or actual_item.slider
+        bottom_marker_visible = self.menu.top_row + self.screen.nr_of_rows < total_rows
 
         self.screen.markers(
             back_marker,
             actual_screen_row,
             top_marker_visible,
             bottom_marker_visible,
-            False,
+            is_selectable,
         )
 
     def _get_actual_item(self):
-        return self.menu.rows[self.cursor_row]
+        return self.menu.rows[self.menu.cursor_row]
 
     def _adjust_layout(self):
         """
@@ -146,35 +146,76 @@ class UIMenu:
 
         redraw_needed = False
         total_rows = self.menu.nr_of_items()
-        if self.cursor_row < self.top_row:  # we moved out of the top
-            if self.top_row > 1:  # we need to move the screen topwards
+        if self.menu.cursor_row < self.menu.top_row:  # we moved out of the top
+            if self.menu.top_row > 1:  # we need to move the screen topwards
                 redraw_needed = True
-            self.top_row = self.cursor_row
-            if self.top_row < 1:  # did we reached the first item?
-                self.top_row = 1
-            self.cursor_row = self.top_row
+            self.menu.top_row = self.menu.cursor_row
+            if self.menu.top_row < 1:  # did we reached the first item?
+                self.menu.top_row = 1
+            self.menu.cursor_row = self.menu.top_row
         elif (
-            self.cursor_row > self.top_row + total_rows - 1
+            self.menu.cursor_row > self.menu.top_row + total_rows - 1
         ):  # we are over the end of a short list
-            self.cursor_row = self.top_row + total_rows - 1
+            self.menu.cursor_row = self.menu.top_row + total_rows - 1
         elif (
-            self.cursor_row > self.top_row + self.screen.nr_of_rows - 1
+            self.menu.cursor_row > self.menu.top_row + self.screen.nr_of_rows - 1
         ):  # we moved out of the bottom
             if (
-                self.top_row + self.screen.nr_of_rows < total_rows
+                self.menu.top_row + self.screen.nr_of_rows < total_rows
             ):  # we need to move the screen topwards
                 redraw_needed = True
-            self.top_row = self.cursor_row - self.screen.nr_of_rows + 1
+            self.menu.top_row = self.menu.cursor_row - self.screen.nr_of_rows + 1
             if (
-                self.top_row > total_rows - self.screen.nr_of_rows
+                self.menu.top_row > total_rows - self.screen.nr_of_rows
             ):  # did we reached the first item?
-                self.top_row = total_rows - self.screen.nr_of_rows
-            self.cursor_row = self.top_row + self.screen.nr_of_rows - 1
+                self.menu.top_row = total_rows - self.screen.nr_of_rows
+            self.menu.cursor_row = self.menu.top_row + self.screen.nr_of_rows - 1
         if redraw_needed:
             self._show()
         else:
             self._set_markers()
 
     def move_cursor(self, step_width):
-        self.cursor_row += step_width
+        self.menu.cursor_row += step_width
+        self.slider_active=False # moving the cursor leaves the slider mode, if any
         self._adjust_layout()
+
+    def select(self,is_rotary_encoder:bool=False):
+        """
+        do all action when a item is selected
+
+        with rotary encoders it's a little bit difficulty, as they have only one knob
+        for both menu selection and also slider changes, so we'll need
+        the knob button to switch between these both modes
+
+
+        """
+        actual_item = self._get_actual_item()
+        if actual_item.slider and not self.slider_active:
+            self.slider_active=True
+        if self.slider_active:
+            if actual_item.callback:
+                actual_item.callback(self.menu.cursor_row,"up") # send a "up" notification to the callback
+                return
+            return
+        if actual_item.callback:
+            actual_item.callback(self.menu.cursor_row) # calls the callback
+        
+    def back(self):
+        """
+        do all action when back is selected a item is selected
+        """
+        actual_item = self._get_actual_item()
+        if self.slider_active:
+            if not actual_item.slider: # reset slider state just in case it has not properly done before anyhow
+                self.slider_active=False
+            else:
+                if actual_item.callback:
+                    actual_item.callback(self.menu.cursor_row,"up") # send a "up" notification to the callback
+                    return
+            return
+        if len(self.menus)>1: # we are not on the lowest level already..
+            self.menus=self.menus[:-1]
+            self.menu=self.menus[-1]
+            self._show()
+        

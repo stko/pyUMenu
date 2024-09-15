@@ -109,8 +109,7 @@ class UIMenu:
             if screen_row == 0:
                 self.menu.print(self.screen, screen_row, 0)
                 continue
-            print("halfful menus need to be tested!")
-            if self.top_row + screen_row > total_rows:
+            if self.top_row + screen_row - 1 > total_rows:
                 self.screen.text(screen_row, "", "")
                 continue
             self.menu.print(self.screen, screen_row, self.top_row + screen_row - 1)
@@ -154,6 +153,10 @@ class UIMenu:
             if self.top_row < 1:  # did we reached the first item?
                 self.top_row = 1
             self.cursor_row = self.top_row
+        elif (
+            self.cursor_row > self.top_row + total_rows - 1
+        ):  # we are over the end of a short list
+            self.cursor_row = self.top_row + total_rows - 1
         elif (
             self.cursor_row > self.top_row + self.screen.nr_of_rows - 1
         ):  # we moved out of the bottom

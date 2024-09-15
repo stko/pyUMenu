@@ -24,19 +24,12 @@ def main():
     menu.add_item(Item("Volume","half"))
     uimenu.add(menu)
     uimenu._show()
-    """
     for i in range(8):
         uimenu.move_cursor(1)
 
     for i in range(8):
         uimenu.move_cursor(-1)
 
-    for i in range(8):
-        uimenu.move_cursor(1)
-
-    for i in range(8):
-        uimenu.move_cursor(-1)
-    """
     for i in range(8):
         uimenu.move_cursor(2)
 

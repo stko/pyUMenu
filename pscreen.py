@@ -1,3 +1,7 @@
+"""
+python class for all screen related primitives in TKinter
+"""
+
 import graphics as gr
 try:                        # In order to be able to import tkinter for
     import tkinter.font as tkf # either in python 2 or in python 3
@@ -26,6 +30,7 @@ class Screen(AScreen):
     MARKER_SELECT="red2"
     MARKER_UP="green3"
     MARKER_DOWN="yellow2"
+    MARKER_INACTIVE="grey"
 
     def __init__(self, title:str,width: int, height: int, padding: int=1, gap: int=1, marker_width: int = 2,orientation: int = 0):
         self.win = gr.GraphWin(title, width, height)
@@ -44,7 +49,7 @@ class Screen(AScreen):
 
 
     def text(self, row:int, title:str, value:str, style:str="arial",percent:int=0):
-        if row>self.nr_of_rows():
+        if row>self.nr_of_rows:
             return
         x1,y1,x2,y2=self.frame_coords(row)
         bar = gr.Rectangle(gr.Point(x1, y1), gr.Point(x2, y2))
@@ -74,11 +79,10 @@ class Screen(AScreen):
             text.setStyle(self.FONT_WEIGHT)
             text.draw(self.win)
 
-    def markers(self, back: int, select: int, up: bool, down: bool):
+    def markers(self, back: int, select: int, up: bool, down: bool,select_active):
         """
         paint all markers in one go
         """
-        nr_of_rows=self.nr_of_rows()
         x1,y1,x2,y2=self.marker_area(False)
         bar = gr.Rectangle(gr.Point(x1, y1), gr.Point(x2, y2))
         bar.setFill(self.BACKGROUND)
@@ -89,16 +93,19 @@ class Screen(AScreen):
         bar.setFill(self.BACKGROUND)
         bar.setWidth(0)
         bar.draw(self.win)        
-        if back > -1 and back <= nr_of_rows:
+        if back > -1 and back <= self.nr_of_rows:
             x1,y1,x2,y2=self.marker_coords(False, back)
             bar = gr.Rectangle(gr.Point(x1, y1), gr.Point(x2, y2))
             bar.setFill(self.MARKER_BACK)
             bar.setWidth(0)
             bar.draw(self.win) 
-        if select > -1 and select <= nr_of_rows:
+        if select > -1 and select <= self.nr_of_rows:
             x1,y1,x2,y2=self.marker_coords(True, select)
             bar = gr.Rectangle(gr.Point(x1, y1), gr.Point(x2, y2))
-            bar.setFill(self.MARKER_SELECT)
+            if select_active:
+                bar.setFill(self.MARKER_SELECT)
+            else:
+                bar.setFill(self.MARKER_INACTIVE)
             bar.setWidth(0)
             bar.draw(self.win) 
         x1,y1,x2,y2=self.marker_up_down_coords(False)

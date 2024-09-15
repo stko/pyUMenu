@@ -38,8 +38,9 @@ class AScreen:
         self.row_height = self.font_height + self.padding + self.gap
         self.frame_x_offset = self.marker_width + 2 * self.gap
         self.text_x_offset = self.frame_x_offset + self.padding
+        self.nr_of_rows=self._calculate_nr_of_rows()
 
-    def nr_of_rows(self):
+    def _calculate_nr_of_rows(self):
         """
         calculates the number of awailable menu rows
         """
@@ -90,7 +91,7 @@ class AScreen:
             # 2 * self.padding
             self.padding
             + self.font_height
-            + self.nr_of_rows() * self.row_height
+            + self.nr_of_rows * self.row_height
             + self.marker_width
             - self.gap
         )
@@ -139,6 +140,6 @@ class AScreen:
             + self.gap
         )
         if down:
-            y1 += self.nr_of_rows() * self.row_height + self.marker_width - 1
+            y1 += self.nr_of_rows * self.row_height + self.marker_width - 1
         y2 = y1 + self.marker_width - 2
         return x1, y1, x2, y2

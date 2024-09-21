@@ -34,8 +34,9 @@ class Screen(AScreen):
 
     def __init__(self, title:str,width: int, height: int, padding: int=1, gap: int=1, marker_width: int = 2,orientation: int = 0):
         self.win = gr.GraphWin(title, width, height)
+        self._mouseCallback = None
         self.win.setBackground(self.BACKGROUND)
-
+        self.win.setMouseHandler(self.mouseHandler)
         # https://www.tutorialspoint.com/measure-the-height-of-a-string-in-tkinter-python
         # create a font object 
         self.font = tkf.Font(family=self.FONT_NAME, size=self.FONT_SIZE, weight=self.FONT_WEIGHT)
@@ -126,3 +127,12 @@ class Screen(AScreen):
         bar.draw(self.win) 
     def close(self):
         self.win.close()
+
+
+    def setMouseHandler(self, func):
+        self._mouseCallback = func
+
+    def mouseHandler(self, point):
+        print(point.x,point.y)
+        if self._mouseCallback:
+            self._mouseCallback(point.x, point.y)

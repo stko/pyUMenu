@@ -126,7 +126,7 @@ class UIMenu:
             back_marker = 0
         top_marker_visible = self.menu.top_row > 1
         is_selectable=actual_item.callback != None or actual_item.slider
-        bottom_marker_visible = self.menu.top_row + self.screen.nr_of_rows < total_rows
+        bottom_marker_visible = self.menu.top_row + self.screen.nr_of_rows <= total_rows
 
         self.screen.markers(
             back_marker,
@@ -161,14 +161,14 @@ class UIMenu:
             self.menu.cursor_row > self.menu.top_row + self.screen.nr_of_rows - 1
         ):  # we moved out of the bottom
             if (
-                self.menu.top_row + self.screen.nr_of_rows < total_rows
+                self.menu.top_row + self.screen.nr_of_rows <= total_rows
             ):  # we need to move the screen topwards
                 redraw_needed = True
             self.menu.top_row = self.menu.cursor_row - self.screen.nr_of_rows + 1
             if (
                 self.menu.top_row > total_rows - self.screen.nr_of_rows
-            ):  # did we reached the first item?
-                self.menu.top_row = total_rows - self.screen.nr_of_rows
+            ):  # did we reached the end of the 
+                self.menu.top_row = total_rows - self.screen.nr_of_rows +1
             self.menu.cursor_row = self.menu.top_row + self.screen.nr_of_rows - 1
         if redraw_needed:
             self._show()

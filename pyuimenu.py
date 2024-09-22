@@ -26,35 +26,61 @@ class Item:
         self.slider = False
         self.callback = callback
         self.data = data
-        self.percentage = 0
+        self.percentage = None
+        self.menu = None
+        self.menu_index = None
 
-    def set_percentage(self, percentage: int):
+    def set_percentage(self, percentage: int, value=None) -> int:
         """
         setting an items percentage makes that item to a slider
         """
-        self.slider = True
-        self.percentage
+        if percentage > 100:
+            percentage = 100
+        elif percentage < 0:
+            percentage = 0
+        if value:
+            self.value = value
+        if self.callback:
+            self.slider = True
+        self.percentage = percentage
+        ## try to update the screen
+        if self.menu and self.menu_index:  # check if parent is set at all
+            uimenu = self.menu.uimenu
+            if uimenu:
+                top_row = self.menu.top_row
+                screen_row = self.menu_index - top_row + 1
+                if screen_row > 0 and screen_row <= uimenu.screen.nr_of_rows:
+                    self.print(uimenu.screen, screen_row, refresh=True)
 
-    def print(self, screen: Screen, row: int):
-        screen.text(row, self.title, self.value, percent=self.percentage)
+        return percentage
+
+    def set_parent(self, menu, index):
+        self.menu = menu
+        self.menu_index = index
+
+    def print(self, screen: Screen, row: int, refresh=False):
+        screen.text(
+            row, self.title, self.value, percent=self.percentage, refresh=refresh
+        )
 
 
 class Menu:
     def __init__(self):
         self.row = 0
         self.top = True
-        self.screen = None
+        self.uimenu = None
         self.rows = []
         self.top_row = 1
         self.cursor_row = 1
-
 
     def add_item(self, item: Item) -> int:
         """
         adds a new row to the module
         """
         self.rows.append(item)
-        return len(self.rows) - 1
+        index = len(self.rows) - 1
+        item.set_parent(self, index)
+        return index
 
     def nr_of_items(self) -> int:
         return len(self.rows) - 1
@@ -78,7 +104,7 @@ class UIMenu:
 
     def __init__(self):
         self.screen = Screen(
-            " pyUIMenu Test ", 320, 240, padding=10, gap=1, marker_width=10
+            " pyUIMenu Test ", 320, 240, padding=10, gap=1, marker_width=10, move_cursor=self.move_cursor, back=self.back, select=self.select
         )
         self.menus = []
         self.menu = None
@@ -95,12 +121,15 @@ class UIMenu:
         """
         pass
 
+    def start(self, loop=None):
+        self.screen.start(loop)
+
     def add(self, menu: Menu):
         menu.top = len(self.menus) == 0
         self.menus.append(menu)
         self.menu = menu
+        menu.uimenu = self
         self._show()
-
 
     def _show(self):
         total_rows = self.menu.nr_of_items()
@@ -125,7 +154,7 @@ class UIMenu:
         else:
             back_marker = 0
         top_marker_visible = self.menu.top_row > 1
-        is_selectable=actual_item.callback != None or actual_item.slider
+        is_selectable = actual_item.callback != None or actual_item.slider
         bottom_marker_visible = self.menu.top_row + self.screen.nr_of_rows <= total_rows
 
         self.screen.markers(
@@ -134,6 +163,7 @@ class UIMenu:
             top_marker_visible,
             bottom_marker_visible,
             is_selectable,
+            True,
         )
 
     def _get_actual_item(self):
@@ -167,8 +197,8 @@ class UIMenu:
             self.menu.top_row = self.menu.cursor_row - self.screen.nr_of_rows + 1
             if (
                 self.menu.top_row > total_rows - self.screen.nr_of_rows
-            ):  # did we reached the end of the 
-                self.menu.top_row = total_rows - self.screen.nr_of_rows +1
+            ):  # did we reached the end of the
+                self.menu.top_row = total_rows - self.screen.nr_of_rows + 1
             self.menu.cursor_row = self.menu.top_row + self.screen.nr_of_rows - 1
         if redraw_needed:
             self._show()
@@ -177,10 +207,10 @@ class UIMenu:
 
     def move_cursor(self, step_width):
         self.menu.cursor_row += step_width
-        self.slider_active=False # moving the cursor leaves the slider mode, if any
+        self.slider_active = False  # moving the cursor leaves the slider mode, if any
         self._adjust_layout()
 
-    def select(self,is_rotary_encoder:bool=False):
+    def select(self, is_rotary_encoder: bool = False):
         """
         do all action when a item is selected
 
@@ -192,30 +222,39 @@ class UIMenu:
         """
         actual_item = self._get_actual_item()
         if actual_item.slider and not self.slider_active:
-            self.slider_active=True
+            self.slider_active = True
         if self.slider_active:
             if actual_item.callback:
-                actual_item.callback(self.menu.cursor_row,"up") # send a "up" notification to the callback
+                actual_item.callback(
+                    actual_item, "up", actual_item.data
+                )  # send a "up" notification to the callback
                 return
             return
         if actual_item.callback:
-            actual_item.callback(self.menu.cursor_row) # calls the callback
-        
+            actual_item.callback(self.menu.cursor_row)  # calls the callback
+
     def back(self):
         """
         do all action when back is selected a item is selected
         """
         actual_item = self._get_actual_item()
         if self.slider_active:
-            if not actual_item.slider: # reset slider state just in case it has not properly done before anyhow
-                self.slider_active=False
+            if (
+                not actual_item.slider
+            ):  # reset slider state just in case it has not properly done before anyhow
+                self.slider_active = False
             else:
                 if actual_item.callback:
-                    actual_item.callback(self.menu.cursor_row,"up") # send a "up" notification to the callback
+                    actual_item.callback(
+                        actual_item, "down", actual_item.data
+                    )  # send a "up" notification to the callback
                     return
             return
-        if len(self.menus)>1: # we are not on the lowest level already..
-            self.menus=self.menus[:-1]
-            self.menu=self.menus[-1]
+        if len(self.menus) > 1:  # we are not on the lowest level already..
+            self.menus = self.menus[:-1]
+            self.menu = self.menus[-1]
             self._show()
-        
+
+
+def onKeyPress(event):
+    print("You pressed %s\n" % (event.char,))

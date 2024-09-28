@@ -102,9 +102,9 @@ class UIMenu:
 
     # https://docs.circuitpython.org/projects/miniqr/en/1.3.4/examples.html
 
-    def __init__(self):
+    def __init__(self,title="pyUIMenu Test",width=320, height=240,font_size=12):
         self.screen = Screen(
-            " pyUIMenu Test ", 320, 240, padding=10, gap=1, marker_width=10, move_cursor=self.move_cursor, back=self.back, select=self.select
+            title, width, height, padding=10, gap=1, marker_width=10, move_cursor=self.move_cursor, back=self.back, select=self.select , eval_mouse_move=self.eval_mouse_move, font_size=font_size
         )
         self.menus = []
         self.menu = None
@@ -169,12 +169,12 @@ class UIMenu:
     def _get_actual_item(self):
         return self.menu.rows[self.menu.cursor_row]
 
-    def _adjust_layout(self):
+    def _adjust_layout(self,force_redraw=False):
         """
         get called after a cursor position change to redraw the screen, if necessary
         """
 
-        redraw_needed = False
+        redraw_needed = force_redraw
         total_rows = self.menu.nr_of_items()
         if self.menu.cursor_row < self.menu.top_row:  # we moved out of the top
             if self.menu.top_row > 1:  # we need to move the screen topwards
@@ -200,10 +200,40 @@ class UIMenu:
             ):  # did we reached the end of the
                 self.menu.top_row = total_rows - self.screen.nr_of_rows + 1
             self.menu.cursor_row = self.menu.top_row + self.screen.nr_of_rows - 1
+        
         if redraw_needed:
             self._show()
         else:
             self._set_markers()
+
+    def eval_mouse_move(self,old_row,old_left,row,left):
+
+        # first the movement
+        if row != old_row: # move it
+            move_by=old_row-row
+            total_rows = self.menu.nr_of_items()
+            self.menu.top_row+=move_by
+            self.menu.cursor_row=self.menu.top_row+row-1
+            self.menu.top_row=self.screen.minmax(self.menu.top_row, 1, total_rows-self.screen.nr_of_rows+1)
+            self.menu.cursor_row=self.screen.minmax(self.menu.cursor_row, 1, total_rows)
+            self._adjust_layout(True)
+            return
+        if row==0:
+            self.back()
+            return
+        # a item was selected
+        # calculate marker position
+        self.menu.cursor_row=self.menu.top_row+row-1
+        self.slider_active = False  # moving the cursor leaves the slider mode, if any
+        self._adjust_layout()
+        actual_item = self._get_actual_item()
+        if left and actual_item.slider:
+            self.slider_active=True
+            self.back()
+        else:
+            self.select()        
+
+            
 
     def move_cursor(self, step_width):
         self.menu.cursor_row += step_width

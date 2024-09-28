@@ -3,6 +3,7 @@ abstract class for all screen related primitives
 """
 
 
+
 class AScreen:
     """
     abstract class for all screen related primitives
@@ -17,19 +18,21 @@ class AScreen:
         gap: int = 1,
         marker_width: int = 2,
         orientation: int = 0,
-        move_cursor = None,
+        move_cursor=None,
         back=None,
-        select=None 
-              ):
+        select=None,
+        eval_mouse_move=None
+    ):
         """
         init
         """
         self.width = width
         self.height = height
         self.orientation = orientation
-        self.move_cursor=move_cursor
-        self.back=back
-        self.select=select
+        self.move_cursor = move_cursor
+        self.back = back
+        self.select = select
+        self.eval_mouse_move=eval_mouse_move
         if orientation == 0 or orientation == 2:
             self.actual_width = width
             self.actual_height = height
@@ -48,15 +51,40 @@ class AScreen:
         self.text_x_offset = self.frame_x_offset + self.padding
         self.nr_of_rows = self._calculate_nr_of_rows()
 
+    def minmax(self,value,min_value,max_value):
+        if value < min_value:
+            return min_value
+        if value > max_value:
+            return max_value
+        return value
+
+    def map_mouse_to_grid(self, x: int, y: int):
+        """
+        calculates, which row have been clicked, and if it was on the left or the right
+        """
+        left = x < self.actual_width / 2
+        if y <= self.row_height + self.marker_width:
+            return 0, left  # the header
+        # remove the header height
+        y -= self.marker_width
+        y = y // self.row_height 
+        if y > self.nr_of_rows:
+            y=self.nr_of_rows
+        return y, left
+
     def start_mouse_move(self, x: int, y: int):
         self.mouse_move = True
-        self.start_x, self.start_y = x, y
+        self.start_mouse_row, self.start_mouse_left =self.map_mouse_to_grid(x,y)
 
     def stop_mouse_move(self, x: int, y: int):
         if self.mouse_move:
             end_x, end_y = x, y
-            print("Mouse move evaluation is missing")
             self.mouse_move = False
+            row, left=self.map_mouse_to_grid(x,y)
+            # calculate effects
+            if self.eval_mouse_move:
+                self.eval_mouse_move(self.start_mouse_row,self.start_mouse_left,row,left)
+
 
     def _calculate_nr_of_rows(self):
         """

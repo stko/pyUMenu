@@ -2,7 +2,7 @@ from pyuimenu import UIMenu, Menu, Item
 
 import random
 
-uimenu = UIMenu()
+uimenu = UIMenu(width=480, height=320,font_size=20)
 
 
 def submenu(row, data=None):
@@ -22,7 +22,12 @@ def slider(item, direction, data):
 
 
 def loop():
-    pass  # print("loop")
+    """
+    this is the loop which is called whenever the UI is in idle
+
+    do your stuff here and return asap
+    """
+    pass #print("loop")
 
 
 def main():

@@ -19,6 +19,7 @@ class Screen(AScreen):
     colors see https://cs111.wellesley.edu/archive/cs111_fall14/public_html/labs/lab12/tkintercolor.html
     """
 
+
     FONT_SIZE = 8
     BACKGROUND = "thistle3"
     TITLE_BG = "cornflower blue"
@@ -48,18 +49,21 @@ class Screen(AScreen):
         orientation: int = 0,
         move_cursor = None,
         back=None,
-        select=None
+        select=None,
+        eval_mouse_move=None,
+        font_size=FONT_SIZE
 
     ):
         ## the Tkinter specific stuff
         self.window = None
         self.canvas = None
         self.font = None
+        self.font_size=font_size
         self.create_tk_window(title, width, height)
         self.window.protocol("WM_DELETE_WINDOW", self.quit)
 
         super().__init__(
-            width, height, self.font_height, padding, gap, marker_width, orientation,move_cursor,back, select
+            width, height, self.font_height, padding, gap, marker_width, orientation,move_cursor,back, select,eval_mouse_move
         )
 
     def quit(self):
@@ -100,7 +104,7 @@ class Screen(AScreen):
         # https://www.tutorialspoint.com/measure-the-height-of-a-string-in-tkinter-python
         # create a font object
         self.font = tkf.Font(
-            family=self.FONT_NAME, size=self.FONT_SIZE, weight=self.FONT_WEIGHT
+            family=self.FONT_NAME, size=self.font_size, weight=self.FONT_WEIGHT
         )
         # measure the dimensions
         ascent = self.font.metrics("ascent")

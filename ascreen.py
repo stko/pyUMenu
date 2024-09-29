@@ -3,7 +3,6 @@ abstract class for all screen related primitives
 """
 
 
-
 class AScreen:
     """
     abstract class for all screen related primitives
@@ -21,7 +20,7 @@ class AScreen:
         move_cursor=None,
         back=None,
         select=None,
-        eval_mouse_move=None
+        eval_mouse_move=None,
     ):
         """
         init
@@ -32,7 +31,7 @@ class AScreen:
         self.move_cursor = move_cursor
         self.back = back
         self.select = select
-        self.eval_mouse_move=eval_mouse_move
+        self.eval_mouse_move = eval_mouse_move
         if orientation == 0 or orientation == 2:
             self.actual_width = width
             self.actual_height = height
@@ -51,7 +50,10 @@ class AScreen:
         self.text_x_offset = self.frame_x_offset + self.padding
         self.nr_of_rows = self._calculate_nr_of_rows()
 
-    def minmax(self,value,min_value,max_value):
+    def minmax(self, value, min_value, max_value):
+        """
+        little helper to adjust a value between min and max
+        """
         if value < min_value:
             return min_value
         if value > max_value:
@@ -61,30 +63,40 @@ class AScreen:
     def map_mouse_to_grid(self, x: int, y: int):
         """
         calculates, which row have been clicked, and if it was on the left or the right
+
+        returns the screen row  and a boolean for left side
+
         """
         left = x < self.actual_width / 2
         if y <= self.row_height + self.marker_width:
             return 0, left  # the header
         # remove the header height
         y -= self.marker_width
-        y = y // self.row_height 
+        y = y // self.row_height
         if y > self.nr_of_rows:
-            y=self.nr_of_rows
+            y = self.nr_of_rows
         return y, left
 
     def start_mouse_move(self, x: int, y: int):
+        """
+        stores mouse coords on mouse button down
+        """
         self.mouse_move = True
-        self.start_mouse_row, self.start_mouse_left =self.map_mouse_to_grid(x,y)
+        self.start_mouse_row, self.start_mouse_left = self.map_mouse_to_grid(x, y)
 
     def stop_mouse_move(self, x: int, y: int):
+        """
+        calculates the effects when the mouse button is released again
+        """
         if self.mouse_move:
             end_x, end_y = x, y
             self.mouse_move = False
-            row, left=self.map_mouse_to_grid(x,y)
+            row, left = self.map_mouse_to_grid(x, y)
             # calculate effects
             if self.eval_mouse_move:
-                self.eval_mouse_move(self.start_mouse_row,self.start_mouse_left,row,left)
-
+                self.eval_mouse_move(
+                    self.start_mouse_row, self.start_mouse_left, row, left
+                )
 
     def _calculate_nr_of_rows(self):
         """
@@ -135,6 +147,46 @@ class AScreen:
             self.actual_width - self.marker_width - self.gap,
             y2,
         )
+
+    def markers(
+        self, back: int, select: int, up: bool, down: bool, select_active, refresh=False
+    ):
+        """
+        paint all markers in one go
+        """
+        x1, y1, x2, y2 = self.marker_area(False)
+        self.draw_rectangle(x1, y1, x2, y2, self.BACKGROUND)
+        x1, y1, x2, y2 = self.marker_area(True)
+        self.draw_rectangle(x1, y1, x2, y2, self.BACKGROUND)
+        if back > -1 and back <= self.nr_of_rows:
+            x1, y1, x2, y2 = self.marker_coords(False, back)
+            self.draw_rectangle(x1, y1, x2, y2, self.MARKER_BACK)
+        if select > -1 and select <= self.nr_of_rows:
+            if select_active:
+                color = self.MARKER_SELECT
+            else:
+                color = self.MARKER_INACTIVE
+
+            x1, y1, x2, y2 = self.marker_coords(True, select)
+            self.draw_rectangle(x1, y1, x2, y2, color)
+        if up:
+            color = self.MARKER_UP
+        else:
+            color = self.BACKGROUND
+
+        x1, y1, x2, y2 = self.marker_up_down_coords(False)
+        self.draw_rectangle(x1, y1, x2, y2, color)
+
+        if down:
+            color = self.MARKER_DOWN
+        else:
+            color = self.BACKGROUND
+
+        x1, y1, x2, y2 = self.marker_up_down_coords(True)
+        self.draw_rectangle(x1, y1, x2, y2, color)
+
+        if refresh:
+            self.refresh()
 
     def marker_area(self, right_side: bool):
         x1 = 0

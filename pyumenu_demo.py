@@ -1,4 +1,4 @@
-from pyuimenu import UIMenu, Menu, Item
+from pyumenu import UIMenu, Menu, Item
 
 import random
 
@@ -18,7 +18,7 @@ def slider(item, direction, data):
         data[0] += 10
     else:
         data[0] -= 10
-    data[0] = item.set_percentage(data[0])
+    data[0] = item.set_percentage(data[0], str(data[0])+ " %")
 
 
 def loop():
@@ -46,7 +46,7 @@ def main():
 
     percentage_control = Item("Percentage", 0)
     # make an item with to a percentage bar by set an percentage
-    percentage_control.set_percentage(0)
+    percentage_control.set_percentage(10, "10 %")
     menu.add_item(percentage_control)
 
     # make an item with to a percentage bar by set an percentage

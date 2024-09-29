@@ -19,7 +19,6 @@ class Screen(AScreen):
     colors see https://cs111.wellesley.edu/archive/cs111_fall14/public_html/labs/lab12/tkintercolor.html
     """
 
-
     FONT_SIZE = 8
     BACKGROUND = "thistle3"
     TITLE_BG = "cornflower blue"
@@ -47,23 +46,32 @@ class Screen(AScreen):
         gap: int = 1,
         marker_width: int = 2,
         orientation: int = 0,
-        move_cursor = None,
+        move_cursor=None,
         back=None,
         select=None,
         eval_mouse_move=None,
-        font_size=FONT_SIZE
-
+        font_size=FONT_SIZE,
     ):
         ## the Tkinter specific stuff
         self.window = None
         self.canvas = None
         self.font = None
-        self.font_size=font_size
+        self.font_size = font_size
         self.create_tk_window(title, width, height)
         self.window.protocol("WM_DELETE_WINDOW", self.quit)
 
         super().__init__(
-            width, height, self.font_height, padding, gap, marker_width, orientation,move_cursor,back, select,eval_mouse_move
+            width,
+            height,
+            self.font_height,
+            padding,
+            gap,
+            marker_width,
+            orientation,
+            move_cursor,
+            back,
+            select,
+            eval_mouse_move,
         )
 
     def quit(self):
@@ -80,6 +88,9 @@ class Screen(AScreen):
         self.window.mainloop()
 
     def tk_poll(self):
+        """
+        hooks into the TKinter idle loop to do application specific
+        """
         ## https://stackoverflow.com/a/38817470
         self.window.update_idletasks()
         if self.loop:
@@ -96,8 +107,8 @@ class Screen(AScreen):
         )
         self.canvas.pack()
 
+        # binds the input events to own routines
         self.window.bind("<KeyPress>", self.onKeyPress)
-
         self.canvas.bind("<ButtonPress-1>", self.start_tk_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.stop_tk_mouse_move)
 
@@ -113,6 +124,7 @@ class Screen(AScreen):
         self.font_height = ascent + self.descent
         self.window.update()
 
+    # catch the mouse evetns
     def start_tk_mouse_move(self, event):
         """transforms tk mouse event into x,y coords"""
         super().start_mouse_move(event.x, event.y)
@@ -122,6 +134,18 @@ class Screen(AScreen):
         if self.mouse_move:
             super().stop_mouse_move(event.x, event.y)
 
+    # catch the keyboard events
+    def onKeyPress(self, event):
+        if event.keysym == "Up" and self.move_cursor:
+            self.move_cursor(-1)
+        if event.keysym == "Down" and self.move_cursor:
+            self.move_cursor(1)
+        if event.keysym == "Left" and self.back:
+            self.back()
+        if event.keysym == "Right" and self.select:
+            self.select()
+
+    # graphic primitives for rectangles and text
     def draw_rectangle(self, x1: int, y1: int, x2: int, y2: int, color):
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, width=0)
 
@@ -147,17 +171,6 @@ class Screen(AScreen):
 
     def refresh(self):
         self.window.update()
-
-    def onKeyPress(self, event):
-        if event.keysym=="Up" and self.move_cursor:
-            self.move_cursor(-1)
-        if event.keysym=="Down" and self.move_cursor:
-            self.move_cursor(1)
-        if event.keysym=="Left" and self.back:
-            self.back()
-        if event.keysym=="Right" and self.select:
-            self.select()
-
 
     def text(self, row: int, title: str, value: str, percent: int = 0, refresh=False):
         if row > self.nr_of_rows:
@@ -210,46 +223,6 @@ class Screen(AScreen):
                     self.FONT_WEIGHT,
                     orientation="se",
                 )
-        if refresh:
-            self.refresh()
-
-    def markers(
-        self, back: int, select: int, up: bool, down: bool, select_active, refresh=False
-    ):
-        """
-        paint all markers in one go
-        """
-        x1, y1, x2, y2 = self.marker_area(False)
-        self.draw_rectangle(x1, y1, x2, y2, self.BACKGROUND)
-        x1, y1, x2, y2 = self.marker_area(True)
-        self.draw_rectangle(x1, y1, x2, y2, self.BACKGROUND)
-        if back > -1 and back <= self.nr_of_rows:
-            x1, y1, x2, y2 = self.marker_coords(False, back)
-            self.draw_rectangle(x1, y1, x2, y2, self.MARKER_BACK)
-        if select > -1 and select <= self.nr_of_rows:
-            if select_active:
-                color = self.MARKER_SELECT
-            else:
-                color = self.MARKER_INACTIVE
-
-            x1, y1, x2, y2 = self.marker_coords(True, select)
-            self.draw_rectangle(x1, y1, x2, y2, color)
-        if up:
-            color = self.MARKER_UP
-        else:
-            color = self.BACKGROUND
-
-        x1, y1, x2, y2 = self.marker_up_down_coords(False)
-        self.draw_rectangle(x1, y1, x2, y2, color)
-
-        if down:
-            color = self.MARKER_DOWN
-        else:
-            color = self.BACKGROUND
-
-        x1, y1, x2, y2 = self.marker_up_down_coords(True)
-        self.draw_rectangle(x1, y1, x2, y2, color)
-
         if refresh:
             self.refresh()
 

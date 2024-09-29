@@ -1,6 +1,6 @@
 """
 
-pyuimenu - show device independed a menu and provides all routines for
+pyumenu - show device independed a menu and provides all routines for
 nested menus and user selections via bottons, rotary know or touchscreen
 
 """
@@ -32,7 +32,8 @@ class Item:
 
     def set_percentage(self, percentage: int, value=None) -> int:
         """
-        setting an items percentage makes that item to a slider
+        setting an items percentage makes that item to a slider,
+        if also its callback is set
         """
         if percentage > 100:
             percentage = 100
@@ -59,12 +60,20 @@ class Item:
         self.menu_index = index
 
     def print(self, screen: Screen, row: int, refresh=False):
+        """
+        draws the item on the screen
+        """
         screen.text(
             row, self.title, self.value, percent=self.percentage, refresh=refresh
         )
 
 
 class Menu:
+    """
+    represents a menu containing a list of items
+
+    """
+
     def __init__(self):
         self.row = 0
         self.top = True
@@ -102,9 +111,22 @@ class UIMenu:
 
     # https://docs.circuitpython.org/projects/miniqr/en/1.3.4/examples.html
 
-    def __init__(self,title="pyUIMenu Test",width=320, height=240,font_size=12):
+    def __init__(self, title="pyUMenu Test", width=320, height=240, font_size=12):
+        """
+        creates the menu canvas with the given dimensions
+        """
         self.screen = Screen(
-            title, width, height, padding=10, gap=1, marker_width=10, move_cursor=self.move_cursor, back=self.back, select=self.select , eval_mouse_move=self.eval_mouse_move, font_size=font_size
+            title,
+            width,
+            height,
+            padding=10,
+            gap=1,
+            marker_width=10,
+            move_cursor=self.move_cursor,
+            back=self.back,
+            select=self.select,
+            eval_mouse_move=self.eval_mouse_move,
+            font_size=font_size,
         )
         self.menus = []
         self.menu = None
@@ -122,9 +144,21 @@ class UIMenu:
         pass
 
     def start(self, loop=None):
+        """
+        starts the event handling of the underlaying graphics interface
+
+        """
         self.screen.start(loop)
 
     def add(self, menu: Menu):
+        """
+        adds a new menu structure to the UI. If there's already one shown,
+        then the previous one is kept. When then the back() function is called,
+        the previous menu is shown again.
+
+        By that a nested menu structure can be realized
+
+        """
         menu.top = len(self.menus) == 0
         self.menus.append(menu)
         self.menu = menu
@@ -132,6 +166,10 @@ class UIMenu:
         self._show()
 
     def _show(self):
+        """
+        draws the actual menu on the screen
+
+        """
         total_rows = self.menu.nr_of_items()
         for screen_row in range(self.screen.nr_of_rows + 1):
             if screen_row == 0:
@@ -144,6 +182,9 @@ class UIMenu:
         self._set_markers()
 
     def _set_markers(self):
+        """
+        draws the four color markers for up, down, back and select on the screen
+        """
         total_rows = self.menu.nr_of_items()
         actual_item = self._get_actual_item()
         actual_screen_row = (
@@ -169,7 +210,7 @@ class UIMenu:
     def _get_actual_item(self):
         return self.menu.rows[self.menu.cursor_row]
 
-    def _adjust_layout(self,force_redraw=False):
+    def _adjust_layout(self, force_redraw=False):
         """
         get called after a cursor position change to redraw the screen, if necessary
         """
@@ -200,49 +241,77 @@ class UIMenu:
             ):  # did we reached the end of the
                 self.menu.top_row = total_rows - self.screen.nr_of_rows + 1
             self.menu.cursor_row = self.menu.top_row + self.screen.nr_of_rows - 1
-        
+
         if redraw_needed:
             self._show()
         else:
             self._set_markers()
 
-    def eval_mouse_move(self,old_row,old_left,row,left):
-
+    def eval_mouse_move(self, old_row, old_left, row, left):
+        """
+        redraws the screen depending on the actual mouse movement
+        """
         # first the movement
-        if row != old_row: # move it
-            move_by=old_row-row
+        if row != old_row:  # move it
+            move_by = old_row - row
             total_rows = self.menu.nr_of_items()
-            self.menu.top_row+=move_by
-            self.menu.cursor_row=self.menu.top_row+row-1
-            self.menu.top_row=self.screen.minmax(self.menu.top_row, 1, total_rows-self.screen.nr_of_rows+1)
-            self.menu.cursor_row=self.screen.minmax(self.menu.cursor_row, 1, total_rows)
+            self.menu.top_row += move_by
+            self.menu.cursor_row = self.menu.top_row + row - 1
+            self.menu.top_row = self.screen.minmax(
+                self.menu.top_row, 1, total_rows - self.screen.nr_of_rows + 1
+            )
+            self.menu.cursor_row = self.screen.minmax(
+                self.menu.cursor_row, 1, total_rows
+            )
             self._adjust_layout(True)
             return
-        if row==0:
+        if row == 0:
             self.back()
             return
         # a item was selected
         # calculate marker position
-        self.menu.cursor_row=self.menu.top_row+row-1
+        self.menu.cursor_row = self.menu.top_row + row - 1
         self.slider_active = False  # moving the cursor leaves the slider mode, if any
         self._adjust_layout()
         actual_item = self._get_actual_item()
         if left and actual_item.slider:
-            self.slider_active=True
+            self.slider_active = True
             self.back()
         else:
-            self.select()        
-
-            
+            self.select()
 
     def move_cursor(self, step_width):
+        """
+        whenever the main application detects an input to change the cursor position
+        e.g. by a hardware button or a rotary knob, it calles this function
+        to update the UI accourdingly
+
+        """
         self.menu.cursor_row += step_width
         self.slider_active = False  # moving the cursor leaves the slider mode, if any
         self._adjust_layout()
 
     def select(self, is_rotary_encoder: bool = False):
         """
-        do all action when a item is selected
+        whenever the main application detects an input to do the select()
+        function e.g. by a hardware button, it calles this function
+        to update the UI accourdingly
+
+        if the actual item has a callback- function, this function is called to
+        e.g. draw a submenu
+
+        But if the item is a percentage gauge and a callback is set, then
+        this makes it to a slider, where the behavior is different:
+
+        When then select() or back() are called, the callback is called
+        with a "up" or "down" information to tell the main application to change
+        the value. The main application uses then the callback to calculate
+        a new value and update the screen by the set_percentage() function
+        of that item.
+
+        As so the callback works different, a percentage item can not be a
+        submenu item at the same time, and vice versa a submenu item can not
+        show a percentage gauge.
 
         with rotary encoders it's a little bit difficulty, as they have only one knob
         for both menu selection and also slider changes, so we'll need
@@ -265,7 +334,22 @@ class UIMenu:
 
     def back(self):
         """
-        do all action when back is selected a item is selected
+        whenever the main application detects an input to do the back()
+        function e.g. by a hardware button, it calles this function
+        to update the UI accourdingly
+
+        But if the item is a percentage gauge and a callback is set, then
+        this makes it to a slider, where the behavior is different:
+
+        When then select() or back() are called, the callback is called
+        with a "up" or "down" information to tell the main application to change
+        the value. The main application uses then the callback to calculate
+        a new value and update the screen by the set_percentage() function
+        of that item.
+
+        As so the callback works different, on a slider the back()
+        can not jump to a parent menu.
+
         """
         actual_item = self._get_actual_item()
         if self.slider_active:
@@ -284,7 +368,3 @@ class UIMenu:
             self.menus = self.menus[:-1]
             self.menu = self.menus[-1]
             self._show()
-
-
-def onKeyPress(event):
-    print("You pressed %s\n" % (event.char,))

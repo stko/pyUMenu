@@ -60,6 +60,15 @@ class AScreen:
             return max_value
         return value
 
+    def lower_first(self, value_1, value_2):
+        """
+        little helper to make sure that of two values the first one is always the lower one
+        """
+        if value_1 < value_2:
+            return value_1, value_2
+        else:
+            return value_2, value_1
+
     def map_mouse_to_grid(self, x: int, y: int):
         """
         calculates, which row have been clicked, and if it was on the left or the right

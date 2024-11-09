@@ -100,6 +100,8 @@ class Screen(AScreen):
     def create_tk_window(self, title: str, width: int, height: int):
         """Opens a Tkinter window with a canvas"""
         self.window = tkinter.Tk()
+        if not title:
+            self.window.overrideredirect(True)
         self.window.title(title)
 
         self.canvas = tkinter.Canvas(

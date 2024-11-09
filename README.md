@@ -93,7 +93,7 @@ The above mentioned callback `submenu`is used to generate a submenu
         menu.add_item(Item("another", "2"))
         uimenu.add(menu)
 
- After generation, the new menu is shown with the uimenu.add() function. The previous menu, if any, is pushed on the internal stack. If later the back() function is triggered, the screen jumps back to the previous menu
+ After generation, the new menu is shown with the `uimenu.add()` function. The previous menu, if any, is pushed on the internal stack. If later the back() function is triggered, the screen jumps back to the previous menu
 
  ### Percentage Gages and Sliders
  PyUMenu supports percentage gages and sliders, which are handled in a different way as normal menu items:
@@ -119,7 +119,7 @@ After that, the behavior of these items are different to normal items:
 * if the actual selected item is a slider, also the back() function works different. Is does not return to the provious menu as normal, it decreases the value instead. So to use the back function as normal, another non-slider item need to be selected first.
 
 
-## Implementation contrains
+## Implementation contraints
 The actual functions are planned, but not implemented yet
 * initial login splash screen to register the device to a backbone infrastructure
 * a User yes/no dialog

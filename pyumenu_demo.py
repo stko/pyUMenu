@@ -2,7 +2,10 @@ from pyumenu import UIMenu, Menu, Item
 
 import random
 
-uimenu = UIMenu(width=480, height=320,font_size=20)
+# without frame
+uimenu = UIMenu(width=480, height=320,font_size=20, title=None)
+
+# uimenu = UIMenu(width=480, height=320,font_size=20)
 
 
 def submenu(row, data=None):
